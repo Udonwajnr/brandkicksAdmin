@@ -9,7 +9,7 @@ const FileUpload = ({ product, setProduct, imageTypeError, setImageTypeError }) 
   const handleFileChange = (e) => {
     const files = e.target.files;
 
-    const allowedPhotoTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+    const allowedPhotoTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp","image/avif"];
     const invalidPhotos = Array.from(files).filter((file) => !allowedPhotoTypes.includes(file.type));
 
     if (invalidPhotos.length > 0) {
@@ -44,7 +44,7 @@ const FileUpload = ({ product, setProduct, imageTypeError, setImageTypeError }) 
         ref={fileInputRef}
         onChange={handleFileChange}
         className="hidden"
-        accept="image/jpeg, image/png, image/jpg, image/webp"
+        accept="image/jpeg, image/png, image/jpg, image/webp, image/avif"
         multiple
       />
 

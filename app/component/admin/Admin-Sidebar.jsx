@@ -12,7 +12,7 @@ export default function AdminSidebar() {
   };
 
   const navItems = [
-    { name: "Dashboard", href: "/", icon: LayoutDashboard },
+    // { name: "Dashboard", href: "/", icon: LayoutDashboard },
     { name: "Products", href: "/products", icon: Package },
     { name: "Orders", href: "/orders", icon: ShoppingCart },
     { name: "Users", href: "/users", icon: Users },

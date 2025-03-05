@@ -33,8 +33,6 @@ export default function NewProductPage() {
     images: [],
   })
 
-  console.log(product)
-
   // For file previews
   const [selectedFiles, setSelectedFiles] = useState([])
   const [imagePreviews, setImagePreviews] = useState([])
@@ -146,9 +144,6 @@ export default function NewProductPage() {
       setIsLoading(false);
     }
   };
-  
-
-  
 
   return (
     <div>
