@@ -146,17 +146,14 @@ export default function NewProductPage() {
       });
 
       toast.success("Product updated successfully!");
-    //   router.push("/admin/products");
+      router.push("/products");
     } catch (error) {
-      console.error("Error updating product:", error);
+      // console.error("Error updating product:", error);
       toast.error("Failed to update product.");
     } finally {
       setIsLoading(false);
     }
   };
-  
-
-  
 
   return (
     <div>
