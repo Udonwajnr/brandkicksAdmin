@@ -1,7 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState,useEffect } from "react"
 import axios from "axios"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,11 +15,14 @@ import { useAuth } from "@/app/context/context"
 // import { ToastAction } from "@/components/ui/toast"
 // import { FileUpload } from "@/app/component/FileUpload"
 import FileUpload from "@/app/component/FileUpload"
+import { useRouter, useParams } from "next/navigation";
 
 export default function NewProductPage() {
-  const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const {api} = useAuth()
+    const router = useRouter();
+  const { slug } = useParams(); // Get the slug from URL
+  const [isLoading, setIsLoading] = useState(false);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [imageTypeError, setImageTypeError] = useState('')
   const [product, setProduct] = useState({
     name: "",
     price: "",
@@ -31,28 +33,57 @@ export default function NewProductPage() {
     color: [""],
     size: [""],
     images: [],
-  })
-
-  console.log(product)
-
+  });
+  const {api} = useAuth()
   // For file previews
-  const [selectedFiles, setSelectedFiles] = useState([])
-  const [imagePreviews, setImagePreviews] = useState([])
-  const [imageTypeError, setImageTypeError] = useState('')
+
+
+   // Fetch product details when component mounts
+  useEffect(() => {
+    if (!slug) return;
+
+    const fetchProduct = async () => {
+      try {
+        const response = await api.get(`http://localhost:8000/api/products/${slug}`);
+        const data = response.data;
+
+        setProduct({
+          name: data.name || "",
+          price: data.price || "",
+          description: data.description || "",
+          brand: data.brand || "",
+          gender: data.gender || "",
+          newlyAdded: data.newlyAdded || false,
+          color: data.color || [""],
+          size: data.size || [""],
+          images: data.images || [],
+        });
+
+        // Generate image previews if images exist
+        setImagePreviews(data.images || []);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        toast.error("Failed to load product.");
+      }
+    };
+
+    fetchProduct();
+  }, [slug]);
+
+  // Handle form field changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProduct((prev) => ({ ...prev, [name]: value }));
   };
-  
+
   const handleSelectChange = (name, value) => {
     setProduct((prev) => ({ ...prev, [name]: value }));
   };
-  
-  
+
   const handleCheckboxChange = (checked) => {
     setProduct((prev) => ({ ...prev, newlyAdded: checked }));
   };
-  
+
   const handleArrayChange = (field, index, value) => {
     setProduct((prev) => {
       const newArray = [...prev[field]];
@@ -60,14 +91,14 @@ export default function NewProductPage() {
       return { ...prev, [field]: newArray };
     });
   };
-  
+
   const addArrayItem = (field) => {
     setProduct((prev) => ({
       ...prev,
       [field]: [...prev[field], ""],
     }));
   };
-  
+
   const removeArrayItem = (field, index) => {
     setProduct((prev) => {
       const newArray = [...prev[field]];
@@ -75,73 +106,50 @@ export default function NewProductPage() {
       return { ...prev, [field]: newArray };
     });
   };
-  
-  const removeImage = (index) => {
-    setProduct((prev) => {
-      const newImages = [...prev.images];
-      newImages.splice(index, 1);
-      return { ...prev, images: newImages };
-    });
-  };
-  
+
+  // Form validation
   const validateForm = () => {
     if (!product.name.trim()) return "Product name is required";
     if (!product.price || isNaN(Number.parseFloat(product.price))) return "Valid price is required";
     if (!product.description.trim()) return "Product description is required";
     if (!product.brand.trim()) return "Brand is required";
     if (!product.gender) return "Gender selection is required";
-  
+
     if (!product.color.some((color) => color.trim())) return "At least one color is required";
     if (!product.size.some((size) => size.trim())) return "At least one size is required";
-  
+
     return null;
   };
-  
+
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-  
+
     try {
       const payload = new FormData();
-  
+
       Object.entries(product).forEach(([key, value]) => {
         if (key === "images" && Array.isArray(value)) {
           value.forEach((file) => payload.append("images", file));
-        } else if (key ==="color" && value) {
-          value.forEach((item) => payload.append("color", item));
-        }else if (key ==="size" && value) {
-          value.forEach((item) => payload.append("size", item));
-        }
-        else {
+        } else if (key === "color" && Array.isArray(value)) {
+          value.forEach((item) => payload.append("color[]", item));
+        } else if (key === "size" && Array.isArray(value)) {
+          value.forEach((item) => payload.append("size[]", item));
+        } else {
           payload.append(key, value);
         }
       });
-  
-      const response = await api.post("http://localhost:8000/api/products", payload, {
+
+      await api.put(`http://localhost:8000/api/products/${slug}`, payload, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-  
-      toast.success("Product submitted successfully!");
-      // router.push("/admin/products");
-  
-      // Reset form state
-      setProduct({
-        name: "",
-        description: "",
-        price: "",
-        quantity: "",
-        color: [],
-        size: [],
-        category: "",
-        tags: "",
-        discountPrice: "",
-        images: [],
-        returnPolicy: "",
-      });
-      setImagePreviews([]);
+
+      toast.success("Product updated successfully!");
+    //   router.push("/admin/products");
     } catch (error) {
-      console.error("Error creating product:", error);
-      toast.error("Failed to submit product.");
+      console.error("Error updating product:", error);
+      toast.error("Failed to update product.");
     } finally {
       setIsLoading(false);
     }
@@ -365,10 +373,10 @@ export default function NewProductPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
+                    Updating...
                   </>
                 ) : (
-                  "Create Product"
+                  "Update Product"
                 )}
               </Button>
             </Card>
